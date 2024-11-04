@@ -36,6 +36,8 @@ class ChatActivity : AppCompatActivity() {
     private var myUserId: String = ""
     private var myUserName: String = ""
 
+    private val chatItemList = mutableListOf<ChatItem>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityChatBinding.inflate(layoutInflater)
@@ -140,6 +142,9 @@ class ChatActivity : AppCompatActivity() {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                     val chatItem = snapshot.getValue(ChatItem::class.java)
                     chatItem ?: return
+
+                    chatItemList.add(chatItem)
+                    chatAdapter.submitList(chatItemList.toMutableList())
 
                     chatAdapter.submitList(chatAdapter.currentList + chatItem)
                 }
