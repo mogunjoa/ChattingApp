@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.database.database
+import com.google.firebase.messaging.messaging
 import com.mogun.mogunchatting.Key.Companion.DB_USERS
 import com.mogun.mogunchatting.databinding.ActivityLoginBinding
 
@@ -59,17 +60,24 @@ class LoginActivity : AppCompatActivity() {
 
                     if (task.isSuccessful && currentUser != null) {
                         val userId = currentUser.uid
-                        val user = mutableMapOf<String, Any>()
-                        user["userId"] = userId
-                        user["username"] = email
 
-                        Firebase.database.reference.child(DB_USERS).child(userId).updateChildren(user)
+                        Firebase.messaging.token.addOnCompleteListener {
+                            val token = it.result
+                            val user = mutableMapOf<String, Any>()
+                            user["userId"] = userId
+                            user["username"] = email
+                            user["fcmToken"] = token
 
-                        // 로그인 성공
-                        startActivity(
-                            Intent(this, MainActivity::class.java)
-                        )
-                        finish()
+                            Firebase.database.reference.child(DB_USERS).child(userId).updateChildren(user)
+
+                            // 로그인 성공
+                            startActivity(
+                                Intent(this, MainActivity::class.java)
+                            )
+                            finish()
+                        }.addOnFailureListener {
+                            Toast.makeText(this, "로그인에 실패하였습니다.", Toast.LENGTH_SHORT).show()
+                        }
                     } else {
                         // 로그인 실패
                         Log.e("LoginActivity", "로그인 실패", task.exception)
