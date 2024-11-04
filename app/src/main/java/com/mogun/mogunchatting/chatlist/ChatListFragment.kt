@@ -1,5 +1,6 @@
 package com.mogun.mogunchatting.chatlist
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
@@ -12,6 +13,7 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.mogun.mogunchatting.Key
 import com.mogun.mogunchatting.R
+import com.mogun.mogunchatting.chatdetail.ChatActivity
 import com.mogun.mogunchatting.databinding.FragmentChatlistBinding
 import com.mogun.mogunchatting.databinding.FragmentUserlistBinding
 
@@ -23,7 +25,14 @@ class ChatListFragment: Fragment(R.layout.fragment_chatlist) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentChatlistBinding.bind(view)
 
-        val chatListAdapter = ChatListAdapter()
+        val chatListAdapter = ChatListAdapter { chatRoomItem ->
+            Intent(context, ChatActivity::class.java).apply {
+                putExtra(ChatActivity.EXTRA_OTHER_USER_ID, chatRoomItem.otherUserId)
+                putExtra(ChatActivity.EXTRA_CHAT_ROOM_ID, chatRoomItem.chatRoomId)
+                startActivity(this)
+            }
+        }
+
         binding.chatListRecyclerView.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = chatListAdapter
