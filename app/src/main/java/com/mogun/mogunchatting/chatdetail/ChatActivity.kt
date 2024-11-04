@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
@@ -11,7 +12,6 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.mogun.mogunchatting.Key
-import com.mogun.mogunchatting.Key.Companion.FCM_SERVER_KEY
 import com.mogun.mogunchatting.R
 import com.mogun.mogunchatting.databinding.ActivityChatBinding
 import com.mogun.mogunchatting.userlist.UserItem
@@ -28,6 +28,7 @@ import java.io.IOException
 class ChatActivity : AppCompatActivity() {
     private lateinit var binding: ActivityChatBinding
     private lateinit var chatAdapter: ChatAdapter
+    private lateinit var linearLayoutManager: LinearLayoutManager
 
     private var chatRoomId: String = ""
     private var otherUserFcmToken: String = ""
@@ -45,6 +46,7 @@ class ChatActivity : AppCompatActivity() {
         chatRoomId = intent.getStringExtra(EXTRA_CHAT_ROOM_ID) ?: return
         otherUserId = intent.getStringExtra(EXTRA_OTHER_USER_ID) ?: return
         myUserId = Firebase.auth.currentUser?.uid ?: ""
+        linearLayoutManager = LinearLayoutManager(applicationContext)
 
         Firebase.database.reference.child(Key.DB_USERS).child(myUserId).get()
             .addOnSuccessListener {
@@ -55,9 +57,17 @@ class ChatActivity : AppCompatActivity() {
             }
 
         binding.chatRecyclerView.apply {
-            layoutManager = LinearLayoutManager(context)
+            layoutManager = linearLayoutManager
             adapter = chatAdapter
         }
+
+        chatAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
+            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+                super.onItemRangeInserted(positionStart, itemCount)
+
+                linearLayoutManager.smoothScrollToPosition(binding.chatRecyclerView, null, chatAdapter.itemCount)
+            }
+        })
 
         binding.sendButton.setOnClickListener {
             val message = binding.messageEditText.text.toString()
@@ -101,7 +111,7 @@ class ChatActivity : AppCompatActivity() {
                 root.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
             val request =
                 Request.Builder().post(requestBody).url("https://fcm.googleapis.com/fcm/send")
-                    .header("Authorization", "key=${FCM_SERVER_KEY}").build()
+                    .header("Authorization", "key=${getString(R.string.fcm_server_key)}").build()
             client.newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {}
 
